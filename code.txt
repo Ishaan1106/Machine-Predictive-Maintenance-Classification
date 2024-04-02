@@ -1,0 +1,239 @@
+<u><h1> Machine Predictive Maintenance Classification </h1></u>
+<font color = "red"> Aliases </font>: Predictive maintenance, Equipment Maintenance Forecasting, Machine failure
+
+
+<h4><font color = "green">  Description: </font></h4> <p>This data dictionary contains metadata for the dataset used in the predictive maintenance project. The dataset contains information on machine failures and maintenance logs, and is used to predict when a machine is likely to fail. The dataset contains the following columns:</p> <br>
+    •<font color = "orange"> UID:</font> A unique identifier for each observation.<br>
+    •<font color = "orange"> Product ID:</font> A unique identifier for each product.<br>
+    •<font color = "orange"> Type:</font> The type of machine.<br>
+    •<font color = "orange"> Air Temperature [K]:</font> The air temperature in Kelvin.<br>
+    •<font color = "orange"> Process Temperature [K]:</font> The process temperature in Kelvin.<br>
+    •<font color = "orange"> Rotational Speed [rpm]:</font> The rotational speed of the machine in revolutions per minute.<br>
+    •<font color = "orange"> Torque [Nm]:</font> The torque of the machine in Newton-meters.<br>
+    •<font color = "orange"> Tool Wear [min]:</font> The amount of time the tool has been in use in minutes<br>
+    •<font color = "orange"> Target:</font> A binary variable indicating whether the machine is likely to fail or not.<br>
+    •<font color = "orange"> Failure Type:</font> The type of failure that occurred.<br>
+
+
+Loading and Previewing Predictive Maintenance Data
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import missingno as msno
+import plotly.express as px
+data = pd.read_csv('data.csv') #load data into pandas dataframe
+df = pd.DataFrame(data) #pri#nting the data frame
+print(df)
+
+
+the basic information about the DataFrame we are working with is as follows:
+
+
+# Create a DataFrame with the same information as df.info()
+info_df = pd.DataFrame({
+    'Non-Null Count': df.count(),
+    'Dtype': df.dtypes
+})
+
+# Apply the style
+styled_info_df = info_df.style.background_gradient(cmap='magma')
+styled_info_df
+
+
+Question: What are the basic statistical measures (like mean, median, standard deviation, etc.) for each column i
+our dataset?
+
+df.describe().style.background_gradient(cmap="magma")
+
+
+list all the columns
+print (df. columns)
+
+
+
+Question: is there any missing values in dataset ? if so then handle them
+print(df.isnull().sum())
+
+# df = df.dropna() #drop all the rows with missing values
+
+Question: How does the average air temperature vary by machine type?
+print(df.groupby('Type')['Air temperature [K]'].mean())
+
+Question: what is the most common failure type ?
+# common_failure_type = df['Failure Type'].mode()
+# print(f"The most common failure type is {common_failure_type}.")
+
+# Filter out 'No Failure'
+filtered_df = df[df['Failure Type'] != 'No Failure']
+
+# Calculate the mode of the filtered data
+common_failure_type = filtered_df['Failure Type'].mode()
+
+print(f"The most common failure type is {common_failure_type[0]}.")
+
+Question: what is the range of took wear time?
+# Extract the 'Tool wear [min]' column
+tool_wear = df['Tool wear [min]']
+
+# Calculate the minimum and maximum tool wear
+min_tool_wear = tool_wear.min()
+max_tool_wear = tool_wear.max()
+
+# Calculate the range of tool wear
+range_tool_wear = max_tool_wear - min_tool_wear
+
+print(f"The minimum tool wear time is {min_tool_wear} minutes.") #in case it's non zero
+print(f"The maximum tool wear time is {max_tool_wear} minutes.")
+print(f"The range of tool wear time is {range_tool_wear} minutes.")
+
+
+Question: what is the mode of the air temperature distribution?
+mode_air_temp = df['Air temperature [K]'].mode()
+print(f"The mode of the air temperature distribution is {mode_air_temp} K.")
+
+Question: what is the unique count of each failure type?
+failure_counts = df['Failure Type'].nunique()
+print(f"There are {failure_counts} unique failure types.")
+
+Question: what is the 75th percentile of the air temperature?
+percentile_air_temp = df['Air temperature [K]'].quantile(0.75)
+print(f"The 75th percentile of air temperature is {percentile_air_temp}K.")
+
+Question: What insights can be drawn from the frequency of unique values in the Type, Target , and Failure
+Type columns in the dataset?
+for col in df[['Type', 'Target', 'Failure Type']]:
+    # Print the count of unique values for each column
+    print(df[col].value_counts())
+    # Separator for better readability
+    print("****" * 8)
+
+Question: What is the proportion of each failure type in the dataset?
+# Filter out 'No Failure'
+filtered_df = df[df['Failure Type'] != 'No Failure']
+
+# Calculate the proportions
+proportions = filtered_df['Failure Type'].value_counts(normalize=True)
+
+# Create the pie chart
+fig = px.pie(values=proportions, names=proportions.index)
+
+# margins
+fig.update_layout(
+    autosize=False,
+    margin=dict(t=3, b=3, l=4, r=3),
+    width=600, height=300
+)
+fig.show()
+
+Question: How does the tool wear time vary across different machine types?
+# Set the figure size
+plt.figure(figsize=(15, 6))
+
+# Create a list of machine types
+machine_types = df['Type'].unique()
+
+# For each machine type, plot a histogram and KDE
+for machine_type in machine_types:
+    subset = df[df['Type'] == machine_type]
+    sns.histplot(subset['Tool wear [min]'], kde=True, label=machine_type)
+
+# Add title and legend
+plt.title('Distribution of Tool Wear Time by Machine Type')
+plt.legend(title='Machine Type')
+plt.show()
+
+Question: Is there a correlation between rotational speed and torque?
+# Calculate the correlation
+correlation = df['Rotational speed [rpm]'].corr(df['Torque [Nm]'])
+print(f'Correlation: {correlation}')
+
+# Plot the scatterplot
+sns.scatterplot(x='Rotational speed [rpm]', y='Torque [Nm]', data=df)
+plt.show()
+
+Question: Are there any correlations between the features?
+# Select only numeric columns
+numeric_df = df.select_dtypes(include=np.number)
+
+# Drop the 'UID' column because it's not needed for the correlation matrix
+numeric_df = numeric_df.drop('UDI', axis=1)
+
+# Calculate correlation matrix and create heatmap
+sns.heatmap(numeric_df.corr(), annot=True)
+plt.show()
+
+Question: How does the distribution of unique values in the 'Type' column of the dataset?
+# Create a figure with two subplots (subplot)
+plt.figure(figsize=(18, 6))
+
+# First subplot - histogram of the count by types ('Type')
+plt.subplot(1, 2, 1)
+sns.countplot(x='Type', data=df)
+plt.bar_label(plt.gca().containers[0])  # Add annotations with numbers above the columns
+plt.title("Type", fontsize=20, color='Red', font='Times New Roman')
+
+# Second subplot - pie chart of shares by types ('Type')
+plt.subplot(1, 2, 2)
+df['Type'].value_counts().plot.pie(explode=[0.1, 0.1, 0.1], autopct='%1.2f%%', shadow=True)
+plt.title("Type", fontsize=20, color='Red', font='Times New Roman')
+
+# Display the plots
+plt.show()
+
+Question: what is the histogram plot to visualize the distribution of air temperature [k] and process
+temperature [k] in the dataset?
+plt.scatter(df['Air temperature [K]'], df['Process temperature [K]'])
+plt.xlabel('Air Temperature (K)')
+plt.ylabel('Process Temperature (K)')
+plt.title('Relationship between Air Temperature and Process Temperature')
+plt.show()
+
+Question: What insights can we glean from this visualization about the nature of failures in the data?
+plt.figure(figsize=(10,5))
+sns.countplot(data=data[data['Target']==1],x="Failure Type")
+#The count on the y-axis represents the number of occurrences of each category in the 'Failure Type' column for rows where 'Target' is 1.
+
+Question: How does the distribution and density of the Air temperature [K] feature in the dataset, as
+visualized by a histogram and Kernel Density Estimation (KDE) line on a black background, inform our
+understanding of the data?
+# Set the background to black
+plt.figure(figsize=(14, 7), facecolor='black')
+
+# Plot the histogram
+n, bins, patches = plt.hist(df["Air temperature [K]"], bins=100, 
+                            color="yellow", edgecolor="red", density=True)
+
+# Plot the KDE line
+sns.kdeplot(df["Air temperature [K]"], color="red", lw=2)
+
+# Set the color of the labels to white
+plt.xlabel("Air temperature [K]", color='white')
+plt.ylabel("Density", color='white')
+plt.tick_params(colors='white')
+
+plt.show()
+
+Question: How does the distribution of Rotational speed [rpm] vary across different Type categories in the
+dataset?
+sns.displot(data=df, x="Rotational speed [rpm]", col="Type", kind="kde");
+
+
+<font color = "yellow"> Question:</font> <font color = "white"> In our manufacturing dataset, we have a column `Tool wear [min]` that records the tool wear time in minutes as integers. However, we have realized that this measurement can be more precise and should be recorded as decimal point numbers. 
+
+Additionally, we want to rearrange the columns in our DataFrame to bring `Tool wear [min]` next to `Type` for easier comparison and analysis.  </font>
+
+
+# Change the data type of the 'Tool wear [min]' column to float
+df['Tool wear [min]'] = df['Tool wear [min]'].astype(float)
+
+# Define the new order of columns
+new_column_order = ['UDI', 'Product ID', 'Type', 'Tool wear [min]', 'Air temperature [K]', 
+                    'Process temperature [K]', 'Rotational speed [rpm]', 'Torque [Nm]', 'Target', 'Failure Type']
+
+# Reindex the DataFrame and store the new DataFrame in a new variable
+hi = df.reindex(new_column_order, axis=1)
+
+# Print the info of the DataFrame to verify the changes
+hi.info()
